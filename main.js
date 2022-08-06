@@ -1,11 +1,13 @@
 const fontFamily = "'Courier New', Courier, monospace";
 const maxGameSpeed = 20;
-const winScore = 2000;
-const gravity = 0.75;
+const winScore = 1500;
+const gravity = 0.70;
 const jumpMaxTime = 8;
-const initialSpawnTimer = 200;
 const jumpForce = 12;
-const minObstacleSeparation = 35;
+const minObstacleSeparation = 10;
+const maxObstacleSeparation = 200;
+const obstacleSpeedSeparator = 2;
+const allowCollisionPixels = 0;
 
 var canvas;
 var ctx;
@@ -17,11 +19,15 @@ let highscore;
 let highscoreText;
 let player;
 let obstacles;
+let background;
 let gameSpeed;
 let keydown = false;
 let gameOverBlock;
 let spawnTimer;
 let floorY;
+let imageList = {};
+let imageLoadCounter = 0;
+let gameOver = false;
 
 
 // Event Listeners
@@ -57,8 +63,8 @@ class Player {
   constructor (x, y, w, h, color) {
     this.x = x; //25
     this.y = y; //0
-    this.w = w; //50
-    this.h = h; //50
+    this.w = w; //100
+    this.h = h; //100
     this.c = color; 
 
     this.fallSpeed = 0;
@@ -101,8 +107,9 @@ class Player {
 
   Draw () {
     ctx.beginPath();
-    ctx.fillStyle = this.c;
-    ctx.fillRect(this.x, this.y, this.w, this.h);
+    ctx.drawImage(imageList[gameOver ? "Burning":"Player0"].image, this.x, this.y, this.w, this.h);
+    //ctx.fillStyle = this.c;
+    //ctx.fillRect(this.x, this.y, this.w, this.h);
     ctx.closePath();
   }
 }
@@ -114,7 +121,6 @@ class Obstacle {
     this.w = w;
     this.h = h;
     this.c = c;
-
     this.dx = -gameSpeed;
   }
 
@@ -126,8 +132,9 @@ class Obstacle {
 
   Draw () {
     ctx.beginPath();
-    ctx.fillStyle = this.c;
-    ctx.fillRect(this.x, this.y, this.w, this.h);
+    //ctx.fillStyle = this.c;
+    //ctx.fillRect(this.x, this.y, this.w, this.h);
+    ctx.drawImage(imageList["Fire"].image, this.x, this.y, this.w, this.h);
     ctx.closePath();
   }
 }
@@ -152,9 +159,52 @@ class Text {
   }
 }
 
+class Background {
+  constructor (x, y, w, h, c) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.c = c;
+    this.dx = -gameSpeed;
+  }
+
+  Update () {
+    this.x += this.dx;
+    this.Draw();
+    this.dx = -gameSpeed;
+  }
+
+  Draw () {
+    ctx.beginPath();
+    //ctx.fillStyle = this.c;
+    //ctx.fillRect(this.x, this.y, this.w, this.h);
+    ctx.drawImage(imageList["Background"].image, this.x, this.y, this.w, this.h);
+    ctx.closePath();
+  }
+
+}
+
+class Sprite {
+  constructor (name) {
+    this.name = name;
+    this.image = new Image();
+    this.image.src = "img/"+this.name+".png";
+    this.image.onload = function() {
+      StartOnLoad();
+    }
+  }
+}
+
+//Utils
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // Game Functions
 function SpawnObstacle () {
-  let size = RandomIntInRange(20, 70);
+  //let size = RandomIntInRange(20, 70);
+  let size = 50;
   let obstacle = new Obstacle(canvas.width + size, floorY - size, size, size, '#2484E4');
 
   obstacles.push(obstacle);
@@ -187,6 +237,7 @@ function Start () {
 
   gameSpeed = 3;
   floorY = canvas.height/2 + 50;
+  gameOver = false;
 
   obstacles = [];
   score = 0;
@@ -195,7 +246,8 @@ function Start () {
     highscore = localStorage.getItem('highscore');
   }
 
-  player = new Player(25, floorY, 50, 50, '#FF5858');
+  player = new Player(25, floorY, 64, 54, '#FF5858');
+  background = new Background(0, floorY-280, 10000, 320, '#333333');
 
   scoreText = new Text("Score: " + score, 25, 25, "left", "#212121", "20");
   highscoreText = new Text("Highscore: " + highscore, canvas.width - 25, 25, "right", "#212121", "20");
@@ -207,40 +259,50 @@ function Start () {
 function Update () {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  background.Update(); //Too wide. There is no need to repeat it
+
   spawnTimer--;
   if (spawnTimer <= 0) {
     SpawnObstacle();
-    console.log(obstacles);
-    //spawnTimer = RandomIntInRange(minObstacleSeparation, initialSpawnTimer) - gameSpeed * 8;
-    spawnTimer = minObstacleSeparation - gameSpeed * 8;
+    spawnTimer = RandomIntInRange(minObstacleSeparation, maxObstacleSeparation) - gameSpeed * obstacleSpeedSeparator;
+    //spawnTimer = minObstacleSeparation - gameSpeed * obstacleSpeedSeparator;
     
     if (spawnTimer < 60) {
       spawnTimer = 60;
     }
   }
 
-  player.Animate();
-
   // Spawn Enemies
   for (let i = 0; i < obstacles.length; i++) {
     let o = obstacles[i];
 
-    if (o.x + o.w < 0) {
+    if (o.x + o.w < 0) { //Obstacle out of view
       obstacles.splice(i, 1);
+      i--;
+      continue;
+    } else {
+      o.Update();
     }
 
     if ( //Collision
-      player.x < o.x + o.w &&
-      player.x + player.w > o.x &&
-      player.y < o.y + o.h &&
-      player.y + player.h > o.y
+      player.x + allowCollisionPixels < o.x + o.w &&
+      player.x + player.w > o.x + allowCollisionPixels &&
+      player.y + allowCollisionPixels < o.y + o.h &&
+      player.y + player.h > o.y - allowCollisionPixels
     ) {
+      console.log(allowCollisionPixels);
+      console.log(player.x, player.y);
+      console.log(player.w, player.h);
+      console.log(o.x, o.y);
+      console.log(o.w, o.h);
+      gameOver = true;
+      player.Animate();
       EndGame();
       return;
     }
-    o.Update();
   }
-
+  
+  player.Animate();
   if (score > winScore) {
     EndGame();
     return;
@@ -261,4 +323,19 @@ function Update () {
   if (gameSpeed < maxGameSpeed) {
     gameSpeed += 0.003;
   }
+}
+
+//This function should be called each time a image is loaded
+function StartOnLoad() {
+  imageLoadCounter++;
+  if (imageLoadCounter == Object.keys(imageList).length) {
+    Start();
+  }
+}
+
+function StartLoadingImages() {
+  var imageNames = [ 'Altar', 'Background', 'Burning', 'Fire', 'GameOver', 'HappyHeart', 'Happy', 'Player0', 'Player1', 'Player2', 'PlayerScared' ];
+  imageNames.forEach(function (item) {
+    imageList[item] = new Sprite(item);
+  });
 }

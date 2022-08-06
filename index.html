@@ -14,6 +14,7 @@
       margin: 0px;
       padding: 0px;
       display: block;
+      image-rendering: pixelated;
     }
     #gameover {
       margin: 0px;
@@ -30,7 +31,7 @@
   </style>
   <script src="main.js"></script>
 </head>
-<body onload="Start()">
+<body onload="StartLoadingImages()">
   <canvas id="game" width="640" height="400"></canvas>
   <div id="gameover" onclick="Start()"><h1 id="endtext">GAME OVER</h1></div>
 </body>
