@@ -24,7 +24,7 @@
       height: 100%;
       top: 0px;
     }
-    #gameover h1 {
+    #gameover * {
       text-align: center;
       font-family: 'Courier New', Courier, monospace;
     }
@@ -33,6 +33,6 @@
 </head>
 <body onload="StartLoadingImages()">
   <canvas id="game" width="640" height="400"></canvas>
-  <div id="gameover" onclick="Start()"><h1 id="endtext">GAME OVER</h1></div>
+  <div id="gameover" onclick="Start()"><h1 id="endtext">GAME OVER</h1><p>Pulsa para reiniciar</p></div>
 </body>
 </html>

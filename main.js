@@ -7,7 +7,7 @@ const jumpForce = 12;
 const minObstacleSeparation = 10;
 const maxObstacleSeparation = 200;
 const obstacleSpeedSeparator = 2;
-const allowCollisionPixels = 0;
+const allowCollisionPixels = 15; //Make it easy
 
 var canvas;
 var ctx;
@@ -28,6 +28,7 @@ let floorY;
 let imageList = {};
 let imageLoadCounter = 0;
 let gameOver = false;
+let drawObstacles = true;
 
 
 // Event Listeners
@@ -160,12 +161,11 @@ class Text {
 }
 
 class Background {
-  constructor (x, y, w, h, c) {
+  constructor (x, y, w, h) {
     this.x = x;
     this.y = y;
     this.w = w;
     this.h = h;
-    this.c = c;
     this.dx = -gameSpeed;
   }
 
@@ -177,7 +177,14 @@ class Background {
 
   Draw () {
     ctx.beginPath();
-    //ctx.fillStyle = this.c;
+    // Sky = #7dd5f4
+    // Grass = #5eb681
+    ctx.fillStyle = '#7dd5f4';
+    ctx.fillRect(0, 0, this.w, this.y + this.h/2);
+    ctx.closePath();
+    ctx.fillStyle = '#5eb681';
+    ctx.fillRect(0, this.y + this.h/2, this.w, 5000);
+    ctx.closePath();
     //ctx.fillRect(this.x, this.y, this.w, this.h);
     ctx.drawImage(imageList["Background"].image, this.x, this.y, this.w, this.h);
     ctx.closePath();
@@ -224,7 +231,7 @@ function EndGame() {
 
 }
 
-function Start () {
+function Start() {
   canvas = document.getElementById('game');
   ctx = canvas.getContext('2d');
   gameOverBlock = document.getElementById("gameover");
@@ -246,7 +253,7 @@ function Start () {
     highscore = localStorage.getItem('highscore');
   }
 
-  player = new Player(25, floorY, 64, 54, '#FF5858');
+  player = new Player(25, floorY, 100, 84, '#FF5858');
   background = new Background(0, floorY-280, 10000, 320, '#333333');
 
   scoreText = new Text("Score: " + score, 25, 25, "left", "#212121", "20");
@@ -288,7 +295,7 @@ function Update () {
       player.x + allowCollisionPixels < o.x + o.w &&
       player.x + player.w > o.x + allowCollisionPixels &&
       player.y + allowCollisionPixels < o.y + o.h &&
-      player.y + player.h > o.y - allowCollisionPixels
+      player.y + player.h > o.y + allowCollisionPixels
     ) {
       console.log(allowCollisionPixels);
       console.log(player.x, player.y);
