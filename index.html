@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chrome Dino Replica</title>
+  <title>Novios saltarines</title>
   <style>
     body {
       margin: 0px;
@@ -29,10 +29,16 @@
       font-family: 'Courier New', Courier, monospace;
     }
   </style>
+  <script>
+    function redirectOnVictory() {
+      alert("Victoria! Has llegado al final!");
+      //window.location = 'invitation.html';
+    }
+  </script>
   <script src="main.js"></script>
 </head>
 <body onload="StartLoadingImages()">
   <canvas id="game" width="640" height="400"></canvas>
-  <div id="gameover" onclick="Start()"><h1 id="endtext">GAME OVER</h1><p>Pulsa para reiniciar</p></div>
+  <div id="gameover" onclick="Start()"><h1 id="endtext">GAME OVER</h1><p id="repeattext">Pulsa para reiniciar</p></div>
 </body>
 </html>

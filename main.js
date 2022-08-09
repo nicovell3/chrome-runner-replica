@@ -2,7 +2,7 @@ const fontFamily = "'Courier New', Courier, monospace";
 const maxGameSpeed = 20;
 const winScore = 1500;
 const gravity = 0.70;
-const jumpMaxTime = 8;
+const jumpMaxTime = 10;
 const jumpForce = 12;
 const minObstacleSeparation = 10;
 const maxObstacleSeparation = 200;
@@ -28,7 +28,8 @@ let floorY;
 let imageList = {};
 let imageLoadCounter = 0;
 let gameOver = false;
-let drawObstacles = true;
+let victory = false;
+let keepSpawningObstacles = true;
 
 
 // Event Listeners
@@ -75,7 +76,7 @@ class Player {
 
   Animate () {
     // Jump
-    if (keydown) {
+    if (keydown && !victory) {
       this.Jump();
     } else {
       this.jumpTimer = 0;
@@ -108,7 +109,11 @@ class Player {
 
   Draw () {
     ctx.beginPath();
-    ctx.drawImage(imageList[gameOver ? "Burning":"Player0"].image, this.x, this.y, this.w, this.h);
+    let spriteImage = Math.floor(Date.now() /200)%2 == 0 ? "Player2" : "Player1";
+    if (gameOver) {
+      spriteImage = victory ? "HappyHeart" : "Burning";
+    }
+    ctx.drawImage(imageList[spriteImage].image, this.x, this.y, this.w, this.h);
     //ctx.fillStyle = this.c;
     //ctx.fillRect(this.x, this.y, this.w, this.h);
     ctx.closePath();
@@ -116,12 +121,12 @@ class Player {
 }
 
 class Obstacle {
-  constructor (x, y, w, h, c) {
+  constructor (x, y, w, h, sprite) {
     this.x = x;
     this.y = y;
     this.w = w;
     this.h = h;
-    this.c = c;
+    this.sprite = sprite;
     this.dx = -gameSpeed;
   }
 
@@ -135,7 +140,7 @@ class Obstacle {
     ctx.beginPath();
     //ctx.fillStyle = this.c;
     //ctx.fillRect(this.x, this.y, this.w, this.h);
-    ctx.drawImage(imageList["Fire"].image, this.x, this.y, this.w, this.h);
+    ctx.drawImage(imageList[this.sprite].image, this.x, this.y, this.w, this.h);
     ctx.closePath();
   }
 }
@@ -162,10 +167,10 @@ class Text {
 
 class Background {
   constructor (x, y, w, h) {
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
+    this.x = 0;
+    this.y = floorY-280;
+    this.w = 10000;
+    this.h = 320;
     this.dx = -gameSpeed;
   }
 
@@ -177,16 +182,16 @@ class Background {
 
   Draw () {
     ctx.beginPath();
-    // Sky = #7dd5f4
-    // Grass = #5eb681
-    ctx.fillStyle = '#7dd5f4';
+    ctx.fillStyle = '#7dd5f4'; //Sky
     ctx.fillRect(0, 0, this.w, this.y + this.h/2);
     ctx.closePath();
-    ctx.fillStyle = '#5eb681';
+    ctx.fillStyle = '#5eb681'; //Grass
     ctx.fillRect(0, this.y + this.h/2, this.w, 5000);
     ctx.closePath();
     //ctx.fillRect(this.x, this.y, this.w, this.h);
     ctx.drawImage(imageList["Background"].image, this.x, this.y, this.w, this.h);
+    ctx.closePath();
+    ctx.drawImage(imageList["Background"].image, this.x+this.w, this.y, this.w, this.h);
     ctx.closePath();
   }
 
@@ -210,11 +215,12 @@ function sleep(ms) {
 
 // Game Functions
 function SpawnObstacle () {
-  //let size = RandomIntInRange(20, 70);
-  let size = 50;
-  let obstacle = new Obstacle(canvas.width + size, floorY - size, size, size, '#2484E4');
+  obstacles.push(new Obstacle(canvas.width + 50, floorY - 60, 50, 60, 'Fire'));
+}
 
-  obstacles.push(obstacle);
+function SpawnAltar() {
+  obstacles.push(new Obstacle(canvas.width + 176, floorY - 128, 76, 128, 'Altar'));
+
 }
 
 function RandomIntInRange (min, max) {
@@ -224,9 +230,10 @@ function RandomIntInRange (min, max) {
 function EndGame() {
   window.localStorage.setItem('highscore', highscore);
   gameOverBlock.style = "display: block;";
-  if (score > winScore) {
+  if (victory) {
     document.getElementById("endtext").innerText = "VICTORIA!";
-    //setTimeout(function () { window.location = 'invitation.html'; }, 2000);
+    document.getElementById("repeattext").innerText = "Redirigiendo...";
+    setTimeout(function () { redirectOnVictory(); }, 2000);
   }
 
 }
@@ -245,6 +252,8 @@ function Start() {
   gameSpeed = 3;
   floorY = canvas.height/2 + 50;
   gameOver = false;
+  keepSpawningObstacles = true;
+  victory = false;
 
   obstacles = [];
   score = 0;
@@ -254,7 +263,7 @@ function Start() {
   }
 
   player = new Player(25, floorY, 100, 84, '#FF5858');
-  background = new Background(0, floorY-280, 10000, 320, '#333333');
+  background = new Background();
 
   scoreText = new Text("Score: " + score, 25, 25, "left", "#212121", "20");
   highscoreText = new Text("Highscore: " + highscore, canvas.width - 25, 25, "right", "#212121", "20");
@@ -266,17 +275,19 @@ function Start() {
 function Update () {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  background.Update(); //Too wide. There is no need to repeat it
+  background.Update();
 
-  spawnTimer--;
-  if (spawnTimer <= 0) {
-    SpawnObstacle();
-    spawnTimer = RandomIntInRange(minObstacleSeparation, maxObstacleSeparation) - gameSpeed * obstacleSpeedSeparator;
-    //spawnTimer = minObstacleSeparation - gameSpeed * obstacleSpeedSeparator;
-    
-    if (spawnTimer < 60) {
-      spawnTimer = 60;
+  if (keepSpawningObstacles && score < winScore) {
+    spawnTimer--;
+    if (spawnTimer <= 0) {
+      SpawnObstacle();
+      spawnTimer = RandomIntInRange(minObstacleSeparation, maxObstacleSeparation) - gameSpeed * obstacleSpeedSeparator;
+      if (spawnTimer < 60) {
+        spawnTimer = 60;
+      }
     }
+  } else if (obstacles[0].sprite == 'Altar') {
+    victory = true;
   }
 
   // Spawn Enemies
@@ -297,11 +308,6 @@ function Update () {
       player.y + allowCollisionPixels < o.y + o.h &&
       player.y + player.h > o.y + allowCollisionPixels
     ) {
-      console.log(allowCollisionPixels);
-      console.log(player.x, player.y);
-      console.log(player.w, player.h);
-      console.log(o.x, o.y);
-      console.log(o.w, o.h);
       gameOver = true;
       player.Animate();
       EndGame();
@@ -310,10 +316,11 @@ function Update () {
   }
   
   player.Animate();
-  if (score > winScore) {
-    EndGame();
-    return;
+  if (score > winScore + 100 && keepSpawningObstacles) {
+    SpawnAltar();
+    keepSpawningObstacles = false;
   }
+
   requestAnimationFrame(Update);
 
   score++;
