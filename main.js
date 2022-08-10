@@ -286,7 +286,7 @@ function Update () {
         spawnTimer = 60;
       }
     }
-  } else if (obstacles[0].sprite == 'Altar') {
+  } else if (obstacles.length > 0 && obstacles[0].sprite == 'Altar') {
     victory = true;
   }
 
@@ -325,14 +325,14 @@ function Update () {
 
   score++;
   scoreText.t = "Score: " + score;
-  scoreText.Draw();
+  //scoreText.Draw();
 
   if (score > highscore) {
     highscore = score;
     highscoreText.t = "Highscore: " + highscore;
   }
   
-  highscoreText.Draw();
+  //highscoreText.Draw();
 
   if (gameSpeed < maxGameSpeed) {
     gameSpeed += 0.003;
