@@ -201,7 +201,7 @@ class Sprite {
   constructor (name) {
     this.name = name;
     this.image = new Image();
-    this.image.src = "img/"+this.name+".png";
+    this.image.src = "img/"+this.name+".png"+window.location.search;
     this.image.onload = function() {
       StartOnLoad();
     }
@@ -231,6 +231,7 @@ function EndGame() {
   window.localStorage.setItem('highscore', highscore);
   gameOverBlock.style = "display: block;";
   if (victory) {
+    document.getElementById("gameover").onclick = null;
     document.getElementById("endtext").innerText = "VICTORIA!";
     document.getElementById("repeattext").innerText = "Redirigiendo...";
     setTimeout(function () { redirectOnVictory(); }, 2000);

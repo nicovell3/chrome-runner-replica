@@ -32,11 +32,12 @@
   </style>
   <script>
     function redirectOnVictory() {
-      alert("Victoria! Has llegado al final!");
-      //window.location = 'invitation.html';
+      window.location = 'invitation.html'+window.location.search;
     }
+    var mainScript = document.createElement("script");
+    mainScript.src = "main.js"+window.location.search;
+    target.appendChild(mainScript);
   </script>
-  <script src="main.js"></script>
 </head>
 <body onload="StartLoadingImages()">
   <canvas id="game" width="640" height="400"></canvas>
