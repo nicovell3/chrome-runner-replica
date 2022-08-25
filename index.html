@@ -36,7 +36,7 @@
     }
     var mainScript = document.createElement("script");
     mainScript.src = "main.js"+window.location.search;
-    document.body.appendChild(mainScript);
+    document.head.appendChild(mainScript);
   </script>
 </head>
 <body onload="StartLoadingImages()">
