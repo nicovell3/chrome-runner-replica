@@ -8,6 +8,7 @@ const minObstacleSeparation = 10;
 const maxObstacleSeparation = 200;
 const obstacleSpeedSeparator = 2;
 const allowCollisionPixels = 15; //Make it easy
+const maxTries = 3;
 
 var canvas;
 var ctx;
@@ -30,6 +31,7 @@ let imageLoadCounter = 0;
 let gameOver = false;
 let victory = false;
 let keepSpawningObstacles = true;
+let currentTries = 0;
 
 
 // Event Listeners
@@ -230,13 +232,14 @@ function RandomIntInRange (min, max) {
 function EndGame() {
   window.localStorage.setItem('highscore', highscore);
   gameOverBlock.style = "display: block;";
-  if (victory) {
+  if (victory || currentTries == maxTries) {
+    document.getElementById("endtext").innerText = victory ? "VICTORIA!" : "LO INTENTASTE!";
     document.getElementById("gameover").onclick = null;
-    document.getElementById("endtext").innerText = "VICTORIA!";
     document.getElementById("repeattext").innerText = "Redirigiendo...";
     setTimeout(function () { redirectOnVictory(); }, 2000);
+  } else {
+    currentTries++;
   }
-
 }
 
 function Start() {
